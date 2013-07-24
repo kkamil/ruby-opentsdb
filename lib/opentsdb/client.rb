@@ -31,8 +31,9 @@ module OpenTSDB
       end_date = options[:end_date].strftime("%Y/%m/%d-%H:%M:%S")
       aggr = options[:aggr]
       metric = options[:metric]
-      query = "/q?start=#{start_date}&end=#{end_date}&m=#{aggr}:#{metric}&ascii"
-      Net::HTTP.get(@hostname, query, @port).scan(/\w+ ([0-9]+) ([-+]?[0-9]+\.?[0-9]*)/).map{|el| OpenStruct.new(:created_at => el[0].to_i, :value => el[1].to_f)}
+      tags = options[:tags] && options[:tags].is_a?(Hash) ? "{#{options[:tags].to_a.map{|el| el.join("=")}.join(',')}}" : ''
+      query = "/q?start=#{start_date}&end=#{end_date}&m=#{aggr}:#{metric}#{tags}&ascii"
+      Net::HTTP.get(@hostname, query, @port).scan(/\w+ ([0-9]+) ([-+]?[0-9]+\.?[0-9]*) *(.*)/).map{|el| OpenStruct.new(:created_at => el[0].to_i, :value => el[1].to_f, :tags => Hash[el[2].scan(/(\w+)=(\w+)/)])}
     end
   end
 end
